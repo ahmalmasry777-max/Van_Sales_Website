@@ -44,7 +44,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .form-card input, .select-box { flex: 1; min-width: 140px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
 .form-card button { background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-.add-unit-btn { background-color: #10b981 !important; padding: 10px 12px !important; font-size: 13px; }
+.add-unit-btn { background-color: #10b981 !important; padding: 8px 12px !important; font-size: 13px; border: none; color: white; border-radius: 6px; cursor: pointer; font-weight: bold; }
 .unit-badge { background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; }
 
 .filter-bar { background: white; padding: 12px 20px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
@@ -65,7 +65,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .save-btn { background: #10b981; color: white; border: none; padding: 10px; border-radius: 6px; flex: 1; cursor: pointer; font-weight: bold; }
 .cancel-btn { background: #64748b; color: white; border: none; padding: 10px; border-radius: 6px; flex: 1; cursor: pointer; font-weight: bold; }
 
-/* إعدادات طباعة الفاتورة النظيفة */
 @media print {
     body * { visibility: hidden; }
     #print-invoice-modal, #print-invoice-modal * { visibility: visible; }
