@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام مبيعات سيارات التوزيع - Van Sales Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-box">
+            <h2>🚚 نظام مبيعات السيارة</h2>
+            <p>تسجيل الدخول للمتابعة</p>
+            <input type="text" id="auth-input" placeholder="رقم الهاتف أو البريد الإلكتروني">
+            <input type="password" id="auth-pass" placeholder="كلمة المرور">
+            <button onclick="handleLogin()">دخول للنظام</button>
+            <button class="google-btn" onclick="handleGoogleLogin()">الدخول بحساب جوجل 🌐</button>
+        </div>
+    </div>
+
+    <!-- التطبيق الرئيسي -->
+    <div id="app-screen" class="app-container" style="display: none;">
+        <!-- الشريط الجانبي -->
+        <aside class="sidebar">
+            <h2>🚚 Van Sales Pro</h2>
+            <ul>
+                <li class="active" onclick="switchTab('dashboard', this)">🏠 الرئيسية</li>
+                <li onclick="switchTab('sell', this)">🛒 نقطة البيع (POS)</li>
+                <li onclick="switchTab('inventory', this)">📦 جرد السيارة</li>
+                <li onclick="switchTab('customers', this)">👥 الزبائن والديون</li>
+                <li onclick="switchTab('returns', this)">🔄 المرتجع والتالف</li>
+                <li onclick="switchTab('budget', this)">💰 الميزانية والأرباح</li>
+                <li onclick="switchTab('supplier', this)">🏢 الشركة الموردة والصندوق</li>
+                <li onclick="logout()" style="color: #ef4444; margin-top: auto;">🚪 تسجيل الخروج</li>
+            </ul>
+        </aside>
+
+        <!-- المحتوى الرئيسي -->
+        <main class="main-content">
+            <header>
+                <h1 id="page-title">لوحة التحكم الرئيسية</h1>
+                <div class="header-controls">
+                    <button class="theme-toggle-btn" onclick="toggleDarkMode()">🌓 الوضع المظلم</button>
+                    <span id="user-info-display">مرحباً بك</span>
+                </div>
+            </header>
+
+            <!-- 1. الرئيسية -->
+            <section id="dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>إجمالي المواد</h3>
+                        <p id="total-items">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>عدد الزبائن</h3>
+                        <p id="total-customers">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>إجمالي ديون الزبائن</h3>
+                        <p id="total-debts">0 ل.س.ج</p>
+                    </div>
+                    <div class="stat-card" style="border-right-color: #10b981;">
+                        <h3>رصيد الصندوق الحالي (النقدي)</h3>
+                        <p id="box-balance" style="color: #10b981;">0 ل.س.ج</p>
+                    </div>
+                    <div class="stat-card" style="border-right-color: #f59e0b;">
+                        <h3>إجمالي الأرباح الكلية</h3>
+                        <p id="total-profits-card" style="color: #f59e0b;">0 ل.س.ج</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>صافي الأرباح اليومية</h3>
+                        <p id="net-profit">0 ل.س.ج</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. نقطة البيع (POS) -->
+            <section id="sell" class="tab-content">
+                <h2>تسجيل فاتورة بيع للزبون</h2>
+                <div class="form-card sell-form">
+                    <select id="sell-customer" class="select-box"><option value="">اختر الزبون...</option></select>
+                    <select id="sell-product" class="select-box" onchange="autofillPrice()"><option value="">اختر المادة من الجرد...</option></select>
+                    
+                    <select id="sell-mode" class="select-box" onchange="changeSellMode()">
+                        <option value="unit">بيع بالوحدة الأساسية</option>
+                        <option value="piece">بيع بالقطعة المفردة</option>
+                    </select>
+
+                    <span id="sell-unit-display" class="unit-badge">الوحدة: ---</span>
+                    <input type="number" id="sell-qty" placeholder="الكمية المباعة">
+                    <input type="number" id="sell-price" placeholder="سعر المفرد (ل.س.ج)">
+                    <input type="number" id="sell-paid" placeholder="المبلغ المقبوض (ل.س.ج)">
+                    <button onclick="completeSale()">إتمام وخصم من الجرد 💳</button>
+                </div>
+
+                <h3>سجل فواتير اليوم:</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>الزبون</th>
+                            <th>المادة</th>
+                            <th>الكمية والوحدة</th>
+                            <th>الإجمالي</th>
+                            <th>المقبوض</th>
+                            <th>المتبقي (دين)</th>
+                            <th>التاريخ</th>
+                            <th>إجراءات الفاتورة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-log-list"></tbody>
+                </table>
+            </section>
+
+            <!-- 3. جرد السيارة -->
+            <section id="inventory" class="tab-content">
+                <h2>إدارة جرد المواد في السيارة</h2>
+                <div class="form-card">
+                    <input type="text" id="item-name" placeholder="اسم المادة">
+                    <input type="number" id="item-qty" placeholder="الكمية بالسيارة">
+                    
+                    <select id="item-unit" class="select-box">
+                        <option value="طرد">طرد</option>
+                        <option value="شوال">شوال</option>
+                        <option value="قطعة">قطعة</option>
+                        <option value="كرتونة">كرتونة</option>
+                        <option value="صندوق">صندوق</option>
+                        <option value="كيلو">كيلو</option>
+                    </select>
+                    <button type="button" class="add-unit-btn" onclick="addNewUnit()">+ إضافة وحدة</button>
+
+                    <input type="number" id="item-pieces-per-unit" placeholder="عدد القطع في الوحدة (اختياري)">
+                    <input type="number" id="item-piece-price" placeholder="سعر مبيع القطعة المفردة">
+
+                    <input type="number" id="item-cost" placeholder="سعر التكلفة للوحدة (ل.س.ج)">
+                    <input type="number" id="item-price" placeholder="سعر بيع الوحدة (ل.س.ج)">
+                    <button onclick="addProduct()">إضافة مادة للجرد</button>
+                </div>
+
+                <div class="filter-bar">
+                    <label>ترتيب المواد حسب:</label>
+                    <select id="sort-select" onchange="updateUI()">
+                        <option value="newest">الأحدث</option>
+                        <option value="oldest">الأقدم</option>
+                        <option value="alphabet">الأبجدية (أ-ي)</option>
+                        <option value="highest-qty">الأكثر كمية</option>
+                    </select>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>المادة</th>
+                            <th>الكمية المتبقية</th>
+                            <th>الوحدة</th>
+                            <th>تفاصيل القطع والتجزئة</th>
+                            <th>التكلفة</th>
+                            <th>سعر البيع</th>
+                            <th>التاريخ</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-list"></tbody>
+                </table>
+            </section>
+
+            <!-- 4. الزبائن والديون -->
+            <section id="customers" class="tab-content">
+                <h2>إدارة الزبائن والمديونية</h2>
+                <div class="form-card">
+                    <input type="text" id="cust-name" placeholder="اسم المحل / الزبون">
+                    <input type="text" id="cust-phone" placeholder="رقم الهاتف">
+                    <input type="text" id="cust-address" placeholder="عنوان المحل / المنطقة">
+                    <input type="number" id="cust-debt" placeholder="ديون سابقة (ل.س.ج)">
+                    <input type="text" id="cust-notes" placeholder="ملاحظات وتفاصيل اختيارية">
+                    <button onclick="addCustomer()">إضافة زبون</button>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>اسم المحل</th>
+                            <th>الهاتف</th>
+                            <th>العنوان</th>
+                            <th>الديون (ل.س.ج)</th>
+                            <th>ملاحظات</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-list"></tbody>
+                </table>
+            </section>
+
+            <!-- 5. المرتجع والتالف -->
+            <section id="returns" class="tab-content">
+                <h2>إدارة الراجع والتالف</h2>
+                <div class="form-card">
+                    <select id="return-customer" class="select-box"><option value="">اختر الزبون...</option></select>
+                    <input type="text" id="return-item" placeholder="اسم المادة المرتجعة">
+                    <input type="number" id="return-qty" placeholder="الكمية">
+                    <select id="return-unit" class="select-box">
+                        <option value="طرد">طرد</option>
+                        <option value="شوال">شوال</option>
+                        <option value="قطعة">قطعة</option>
+                        <option value="كرتونة">كرتونة</option>
+                    </select>
+                    <select id="return-type" class="select-box" style="max-width: 150px;">
+                        <option value="تالف">تالف / منتهي الصلاحية</option>
+                        <option value="مرتجع صالح">مرتجع صالح للبيع</option>
+                    </select>
+                    <button onclick="addReturnItem()">تسجيل الراجع</button>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>الزبون</th>
+                            <th>المادة</th>
+                            <th>الكمية والوحدة</th>
+                            <th>الحالة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="returns-list"></tbody>
+                </table>
+            </section>
+
+            <!-- 6. الميزانية والأرباح -->
+            <section id="budget" class="tab-content">
+                <h2>الميزانية وصندوق المصاريف والأرباح التفصيلية</h2>
+                <div class="form-card">
+                    <input type="text" id="expense-desc" placeholder="بيان المصروف (وقود، صيانة...)">
+                    <input type="number" id="expense-amount" placeholder="المبلغ (ل.س.ج)">
+                    <button onclick="addExpense()">تسجيل مصروف</button>
+                </div>
+
+                <h3>سجل المصاريف:</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>البيان</th>
+                            <th>المبلغ (ل.س.ج)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenses-list"></tbody>
+                </table>
+
+                <h3 style="margin-top: 25px;">تفاصيل الأرباح:</h3>
+                <div class="stats-grid" style="margin-top: 10px;">
+                    <div class="stat-card">
+                        <h3>إجمالي المبيعات</h3>
+                        <p id="detailed-total-sales">0 ل.س.ج</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>إجمالي تكلفة البضاعة المباعة</h3>
+                        <p id="detailed-total-cost">0 ل.س.ج</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>إجمالي المصاريف المسجلة</h3>
+                        <p id="detailed-total-expenses">0 ل.س.ج</p>
+                    </div>
+                    <div class="stat-card" style="border-right-color: #10b981;">
+                        <h3>صافي الأرباح النهائية</h3>
+                        <p id="detailed-net-profit" style="color: #10b981;">0 ل.س.ج</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. الشركة الموردة والصندوق -->
+            <section id="supplier" class="tab-content">
+                <h2>إدارة حساب الشركة الموردة والدفعات النقدية</h2>
+                <div class="form-card">
+                    <input type="text" id="supplier-payment-desc" placeholder="بيان الدفعة (مثال: دفعة حساب بضاعة الأسبوع)">
+                    <input type="number" id="supplier-payment-amount" placeholder="المبلغ المدفوع للشركة (ل.س.ج)">
+                    <button onclick="addSupplierPayment()" style="background-color: #8b5cf6;">تسجيل دفعة للشركة 🏢</button>
+                </div>
+
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card" style="border-right-color: #8b5cf6;">
+                        <h3>إجمالي المبالغ المدفوعة للشركة</h3>
+                        <p id="total-supplier-paid" style="color: #8b5cf6;">0 ل.س.ج</p>
+                    </div>
+                </div>
+
+                <h3>سجل الدفعات المقدمة للشركة الموردة:</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>البيان / التفاصيل</th>
+                            <th>المبلغ المدفوع (ل.س.ج)</th>
+                            <th>التاريخ</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="supplier-payments-list"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <!-- نافذة تعديل الزبون -->
+    <div id="edit-modal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <h3>تعديل بيانات الزبون</h3>
+            <input type="hidden" id="edit-cust-index">
+            <label>اسم المحل:</label><input type="text" id="edit-cust-name">
+            <label>الهاتف:</label><input type="text" id="edit-cust-phone">
+            <label>العنوان:</label><input type="text" id="edit-cust-address">
+            <label>الديون (ل.س.ج):</label><input type="number" id="edit-cust-debt">
+            <label>التفاصيل:</label><input type="text" id="edit-cust-notes">
+            <div class="modal-buttons">
+                <button onclick="saveCustomerEdit()" class="save-btn">حفظ</button>
+                <button onclick="closeEditModal()" class="cancel-btn">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- قالب طباعة الفاتورة المخفي -->
+    <div id="print-invoice-modal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box" style="max-width: 400px; text-align: right; background: white; color: black;">
+            <div id="invoice-content" style="padding: 10px; font-family: 'Cairo', sans-serif;">
+                <h3 style="text-align: center; margin-bottom: 10px;">🚚 فاتورة مبيعات سيارة التوزيع</h3>
+                <hr style="border: 0.5px solid #ccc; margin-bottom: 10px;">
+                <p><strong>التاريخ:</strong> <span id="inv-date"></span></p>
+                <p><strong>الزبون:</strong> <span id="inv-customer"></span></p>
+                <hr style="border: 0.5px solid #eee; margin: 10px 0;">
+                <p><strong>المادة:</strong> <span id="inv-product"></span></p>
+                <p><strong>الكمية:</strong> <span id="inv-qty"></span></p>
+                <p><strong>الإجمالي:</strong> <span id="inv-total"></span> ل.س.ج</p>
+                <p><strong>المقبوض:</strong> <span id="inv-paid"></span> ل.س.ج</p>
+                <p><strong>المتبقي (الدين):</strong> <span id="inv-remaining"></span> ل.س.ج</p>
+                <hr style="border: 0.5px solid #eee; margin: 10px 0;">
+                <p style="text-align: center; font-size: 12px; color: #666;">شكراً لتعاملكم معنا - Van Sales Pro</p>
+            </div>
+            <div class="modal-buttons" style="margin-top: 15px;">
+                <button onclick="window.print()" class="save-btn">🖨️ طباعة الفاتورة</button>
+                <button onclick="shareViaWhatsApp()" style="background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; flex: 1; cursor: pointer; font-weight: bold;">💬 مشاركة واتساب</button>
+                <button onclick="closePrintModal()" class="cancel-btn">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
