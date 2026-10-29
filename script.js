@@ -4,6 +4,7 @@ let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
 let salesLog = JSON.parse(localStorage.getItem('salesLog')) || [];
 let returnsLog = JSON.parse(localStorage.getItem('returnsLog')) || [];
 let supplierPayments = JSON.parse(localStorage.getItem('supplierPayments')) || [];
+let debtPayments = JSON.parse(localStorage.getItem('debtPayments')) || [];
 let isDarkMode = localStorage.getItem('isDarkMode') === 'true';
 let currentUser = localStorage.getItem('currentUser');
 let currentSharedInvoice = null;
@@ -172,6 +173,36 @@ function completeSale() {
     alert('تمت عملية البيع وخصم الكمية بنجاح!');
 }
 
+// دالة تسديد الدين من الزبون
+function payCustomerDebt(index) {
+    let cust = customers[index];
+    let currentDebt = Number(cust.debt);
+    if (currentDebt <= 0) {
+        alert('هذا الزبون ليس عليه ديون متبقية!');
+        return;
+    }
+
+    let paidAmountStr = prompt(`الزبون (${cust.name}) عليه دين بمبلغ ${currentDebt} ل.س.ج.\nأدخل المبلغ المراد تسديده الآن:`, currentDebt);
+    let paidAmount = Number(paidAmountStr);
+
+    if (paidAmount && paidAmount > 0) {
+        if (paidAmount > currentDebt) {
+            alert('المبلغ المدفوع أكبر من قيمة الدين المسجلة!');
+            return;
+        }
+
+        cust.debt = currentDebt - paidAmount;
+        debtPayments.push({
+            customerName: cust.name,
+            amount: paidAmount,
+            date: new Date().toLocaleDateString('ar-EG')
+        });
+
+        updateUI();
+        alert(`تم تسديد مبلغ ${paidAmount} ل.س.ج بنجاح وإضافته إلى صندوق النقدية!`);
+    }
+}
+
 // دوال طباعة الفاتورة والمشاركة
 function openPrintModal(index) {
     let sale = salesLog[index];
@@ -268,7 +299,7 @@ function addSupplierPayment() {
         document.getElementById('supplier-payment-desc').value = '';
         document.getElementById('supplier-payment-amount').value = '';
         updateUI();
-        alert('تم تسجيل دفعة الشركة بنجاح وخمها من الصندوق');
+        alert('تم تسجيل دفعة الشركة بنجاح وخصمها من الصندوق');
     } else {
         alert('يرجى إدخال بيان الدفعة والمبلغ بدقة');
     }
@@ -334,9 +365,10 @@ function updateUI() {
                 <td>${cust.name}</td>
                 <td>${cust.phone || '---'}</td>
                 <td>${cust.address || '---'}</td>
-                <td>${cust.debt} ل.س.ج</td>
+                <td><strong style="color: #ef4444;">${cust.debt} ل.س.ج</strong></td>
                 <td>${cust.notes || '---'}</td>
                 <td>
+                    <button class="add-unit-btn" onclick="payCustomerDebt(${index})">تسديد دين 💵</button>
                     <button class="edit-btn" onclick="openEditModal(${index})">تعديل ✏️</button>
                     <button class="delete-btn" onclick="deleteCustomer(${index})">حذف</button>
                 </td>
@@ -380,6 +412,10 @@ function updateUI() {
         expList.innerHTML += `<tr><td>${exp.desc}</td><td>${exp.amount} ل.س.ج</td></tr>`;
     });
 
+    // حساب إجمالي تسديدات الديون المقبوضة
+    let totalDebtPaymentsSum = 0;
+    debtPayments.forEach(dp => totalDebtPaymentsSum += Number(dp.amount));
+
     // حساب إجمالي دفعات الشركة
     let totalSupplierPaidSum = 0;
     const supList = document.getElementById('supplier-payments-list');
@@ -396,8 +432,8 @@ function updateUI() {
     });
     document.getElementById('total-supplier-paid').innerText = totalSupplierPaidSum + ' ل.س.ج';
 
-    // حساب رصيد الصندوق الحالي (النقد المقبوض من المبيعات ناقص المصاريف وناقص المدفوع للشركة)
-    let currentBoxBalance = totalPaidCashFromSales - totalExpensesSum - totalSupplierPaidSum;
+    // حساب رصيد الصندوق الحالي (المقبوض من المبيعات + تسديد الديون القديمة - المصاريف - دفعات الشركة)
+    let currentBoxBalance = totalPaidCashFromSales + totalDebtPaymentsSum - totalExpensesSum - totalSupplierPaidSum;
     document.getElementById('box-balance').innerText = currentBoxBalance + ' ل.س.ج';
 
     const returnsTbl = document.getElementById('returns-list');
@@ -410,7 +446,6 @@ function updateUI() {
     document.getElementById('net-profit').innerText = netProfitFinal + ' ل.س.ج';
     document.getElementById('total-profits-card').innerText = totalProfitSum + ' ل.س.ج';
 
-    // تحديث تفاصيل الأرباح في صفحة الميزانية
     document.getElementById('detailed-total-sales').innerText = totalSalesSum + ' ل.س.ج';
     document.getElementById('detailed-total-cost').innerText = totalCostOfSales + ' ل.س.ج';
     document.getElementById('detailed-total-expenses').innerText = totalExpensesSum + ' ل.س.ج';
@@ -422,6 +457,7 @@ function updateUI() {
     localStorage.setItem('salesLog', JSON.stringify(salesLog));
     localStorage.setItem('returnsLog', JSON.stringify(returnsLog));
     localStorage.setItem('supplierPayments', JSON.stringify(supplierPayments));
+    localStorage.setItem('debtPayments', JSON.stringify(debtPayments));
 }
 
 function addProduct() {
